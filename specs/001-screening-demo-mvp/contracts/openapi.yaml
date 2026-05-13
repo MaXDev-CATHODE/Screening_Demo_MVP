@@ -1,0 +1,438 @@
+openapi: 3.0.3
+info:
+  title: Screening Demo MVP API
+  version: 0.1.0
+  description: API contract for the first interactive screening demo MVP.
+servers:
+  - url: /api
+paths:
+  /auth/demo-login:
+    post:
+      summary: Start a demo session as one seeded role
+      operationId: demoLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  $ref: "#/components/schemas/UserRole"
+      responses:
+        "200":
+          description: Demo session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /session:
+    get:
+      summary: Get current demo session
+      operationId: getSession
+      responses:
+        "200":
+          description: Current session or anonymous state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+  /logout:
+    post:
+      summary: End current demo session
+      operationId: logout
+      responses:
+        "204":
+          description: Session ended
+  /products:
+    get:
+      summary: List visible products for the current role
+      operationId: listProducts
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create one sample product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /products/import:
+    post:
+      summary: Import a small set of sample products
+      operationId: importProducts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [products]
+              properties:
+                products:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/ProductInput"
+      responses:
+        "200":
+          description: Import completed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created, limited, invalid]
+                properties:
+                  created:
+                    type: integer
+                  limited:
+                    type: integer
+                  invalid:
+                    type: integer
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /reference-lists:
+    get:
+      summary: List active reference lists
+      operationId: listReferenceLists
+      responses:
+        "200":
+          description: Reference lists
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReferenceList"
+    post:
+      summary: Create a reference list
+      operationId: createReferenceList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReferenceListInput"
+      responses:
+        "201":
+          description: Reference list created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferenceList"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /rules:
+    get:
+      summary: List screening rules
+      operationId: listRules
+      parameters:
+        - name: referenceListId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Screening rules
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScreeningRule"
+    post:
+      summary: Create a first-demo screening rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScreeningRuleInput"
+      responses:
+        "201":
+          description: Rule created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningRule"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /screenings:
+    post:
+      summary: Run screening for one product against one reference list
+      operationId: createScreening
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, referenceListId]
+              properties:
+                productId:
+                  type: string
+                referenceListId:
+                  type: string
+      responses:
+        "201":
+          description: Screening result created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /screenings/{id}:
+    get:
+      summary: Get one screening result
+      operationId: getScreening
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Screening result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningResult"
+        "404":
+          description: Screening result not found
+components:
+  responses:
+    BadRequest:
+      description: Request is invalid for the demo workflow
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Demo session is required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Current role cannot perform this action
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    UserRole:
+      type: string
+      enum: [SUPER_ADMIN, COMPANY_ADMIN, STANDARD_USER]
+    ProductType:
+      type: string
+      enum: [SUBSTANCE, MIXTURE, ARTICLE]
+    DataQualityStatus:
+      type: string
+      enum: [READY, LIMITED, INVALID]
+    ScreeningStatus:
+      type: string
+      enum: [match, no match, verification required]
+    MatchedField:
+      type: string
+      enum: [CAS, EC, NAME, RULE, NONE]
+    Session:
+      type: object
+      required: [authenticated]
+      properties:
+        authenticated:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/User"
+    User:
+      type: object
+      required: [id, displayName, email, role]
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        companyId:
+          type: string
+          nullable: true
+    ProductInput:
+      type: object
+      required: [name, productType, substances]
+      properties:
+        name:
+          type: string
+        productType:
+          $ref: "#/components/schemas/ProductType"
+        substances:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SubstanceInput"
+    Product:
+      allOf:
+        - $ref: "#/components/schemas/ProductInput"
+        - type: object
+          required: [id, companyId, dataQualityStatus]
+          properties:
+            id:
+              type: string
+            companyId:
+              type: string
+            dataQualityStatus:
+              $ref: "#/components/schemas/DataQualityStatus"
+    SubstanceInput:
+      type: object
+      required: [name, concentrationPercent]
+      properties:
+        name:
+          type: string
+        casNumber:
+          type: string
+          nullable: true
+        ecNumber:
+          type: string
+          nullable: true
+        concentrationPercent:
+          type: number
+          minimum: 0
+    ReferenceListInput:
+      type: object
+      required: [name, items]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        active:
+          type: boolean
+          default: true
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferenceListItemInput"
+    ReferenceList:
+      allOf:
+        - $ref: "#/components/schemas/ReferenceListInput"
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+    ReferenceListItemInput:
+      type: object
+      properties:
+        name:
+          type: string
+        casNumber:
+          type: string
+          nullable: true
+        ecNumber:
+          type: string
+          nullable: true
+    ScreeningRuleInput:
+      type: object
+      required: [referenceListId, name, conditions, outcomeStatus]
+      properties:
+        referenceListId:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+          default: true
+        conditions:
+          $ref: "#/components/schemas/RuleConditions"
+        outcomeStatus:
+          $ref: "#/components/schemas/ScreeningStatus"
+    ScreeningRule:
+      allOf:
+        - $ref: "#/components/schemas/ScreeningRuleInput"
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+    RuleConditions:
+      type: object
+      required: [productTypeEquals, concentrationGreaterThan]
+      properties:
+        productTypeEquals:
+          $ref: "#/components/schemas/ProductType"
+        concentrationGreaterThan:
+          type: number
+          example: 0.1
+    ScreeningResult:
+      type: object
+      required: [id, productId, referenceListId, status, matchedField, reason, comment, createdAt]
+      properties:
+        id:
+          type: string
+        productId:
+          type: string
+        referenceListId:
+          type: string
+        status:
+          $ref: "#/components/schemas/ScreeningStatus"
+        matchedField:
+          $ref: "#/components/schemas/MatchedField"
+        reason:
+          type: string
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string

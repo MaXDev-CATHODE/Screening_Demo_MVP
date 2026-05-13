@@ -1,0 +1,12 @@
+import { expect, test } from "@playwright/test";
+
+test("company admin can add and import product data", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /Administrator firmy/ }).click();
+  await page.waitForURL("**/screening");
+  await page.getByRole("link", { name: "Dane produktowe" }).click();
+  await page.getByRole("button", { name: "Zapisz produkt" }).click();
+  await expect(page.getByText("Produkt dodany.")).toBeVisible();
+  await page.getByRole("button", { name: "Import demo JSON" }).click();
+  await expect(page.getByText(/Import:/)).toBeVisible();
+});

@@ -1,0 +1,50 @@
+name: Validate and Deploy Demo
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 001-screening-demo-mvp
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://demo:demo@localhost:5432/screening_demo' }}
+      DEMO_SESSION_SECRET: ${{ secrets.DEMO_SESSION_SECRET || 'ci-demo-session-secret' }}
+      HAS_DATABASE_URL: ${{ secrets.DATABASE_URL != '' }}
+      HAS_RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit and integration tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests
+        run: npm run test:e2e
+      - name: Apply migrations
+        if: env.HAS_DATABASE_URL == 'true'
+        run: npx prisma migrate deploy
+      - name: Seed demo data
+        if: env.HAS_DATABASE_URL == 'true'
+        run: npm run seed
+      - name: Trigger Render deploy
+        if: env.HAS_RENDER_DEPLOY_HOOK_URL == 'true'
+        run: curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"

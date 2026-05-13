@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  STANDARD_USER
+}
+
+enum ProductType {
+  SUBSTANCE
+  MIXTURE
+  ARTICLE
+}
+
+enum DataQualityStatus {
+  READY
+  LIMITED
+  INVALID
+}
+
+enum ScreeningStatus {
+  MATCH
+  NO_MATCH
+  VERIFICATION_REQUIRED
+}
+
+enum MatchedField {
+  CAS
+  EC
+  NAME
+  RULE
+  NONE
+}
+
+model Company {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  users     User[]
+  products  Product[]
+}
+
+model User {
+  id          String   @id @default(cuid())
+  displayName String
+  email       String   @unique
+  role        UserRole
+  companyId   String?
+  createdAt   DateTime @default(now())
+  company     Company? @relation(fields: [companyId], references: [id])
+}
+
+model Product {
+  id                String            @id @default(cuid())
+  companyId         String
+  name              String
+  productType       ProductType
+  dataQualityStatus DataQualityStatus @default(READY)
+  createdAt         DateTime          @default(now())
+  company           Company           @relation(fields: [companyId], references: [id])
+  substances        Substance[]
+  screeningResults  ScreeningResult[]
+}
+
+model Substance {
+  id                   String  @id @default(cuid())
+  productId            String
+  name                 String
+  casNumber            String?
+  ecNumber             String?
+  concentrationPercent Float
+  product              Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ReferenceList {
+  id               String              @id @default(cuid())
+  name             String
+  description      String?
+  active           Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  items            ReferenceListItem[]
+  rules            ScreeningRule[]
+  businessComments BusinessComment[]
+  screeningResults ScreeningResult[]
+}
+
+model ReferenceListItem {
+  id              String        @id @default(cuid())
+  referenceListId String
+  name            String?
+  casNumber       String?
+  ecNumber        String?
+  referenceList   ReferenceList @relation(fields: [referenceListId], references: [id], onDelete: Cascade)
+}
+
+model ScreeningRule {
+  id              String          @id @default(cuid())
+  referenceListId String
+  name            String
+  active          Boolean         @default(true)
+  conditions      Json
+  outcomeStatus   ScreeningStatus
+  referenceList   ReferenceList   @relation(fields: [referenceListId], references: [id], onDelete: Cascade)
+}
+
+model BusinessComment {
+  id              String          @id @default(cuid())
+  referenceListId String
+  status          ScreeningStatus
+  text            String
+  referenceList   ReferenceList   @relation(fields: [referenceListId], references: [id], onDelete: Cascade)
+}
+
+model ScreeningResult {
+  id              String          @id @default(cuid())
+  productId       String
+  referenceListId String
+  status          ScreeningStatus
+  matchedField    MatchedField
+  reason          String
+  comment         String
+  createdAt       DateTime        @default(now())
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  referenceList   ReferenceList   @relation(fields: [referenceListId], references: [id], onDelete: Cascade)
+}
