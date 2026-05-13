@@ -40,6 +40,7 @@ export type DemoUser = {
   email: string;
   role: UserRole;
   companyId: string | null;
+  companyName?: string | null;
 };
 
 export function toApiScreeningStatus(status: PrismaScreeningStatus): ApiScreeningStatus {

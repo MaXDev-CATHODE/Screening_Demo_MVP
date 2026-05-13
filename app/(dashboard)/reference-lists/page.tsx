@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RuleSummary } from "@/components/dashboard/RuleSummary";
 import { RuleBuilder } from "@/components/forms/RuleBuilder";
@@ -64,8 +65,13 @@ export default function ReferenceListsPage() {
   return (
     <div className="grid two">
       <div className="card">
+        <span className="badge subtle">Global reference data</span>
         <h2>Listy referencyjne</h2>
+        <p className="muted">
+          Te dane są globalne dla SaaS-a. Produkty firmy są sprawdzane względem wybranej listy i jej reguł.
+        </p>
         <button className="button secondary" onClick={createList}>
+          <Plus aria-hidden="true" size={16} />
           Dodaj przykładową listę
         </button>
         {message ? <p className="muted">{message}</p> : null}

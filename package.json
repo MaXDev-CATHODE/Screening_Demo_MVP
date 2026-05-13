@@ -17,6 +17,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "latest",
     "@prisma/client": "latest",
+    "lucide-react": "^1.14.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"

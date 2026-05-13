@@ -32,12 +32,14 @@ export async function getCurrentSession(): Promise<DemoSession> {
       displayName: true,
       email: true,
       role: true,
-      companyId: true
+      companyId: true,
+      company: { select: { name: true } }
     }
   });
 
   if (!user) return { authenticated: false };
-  return { authenticated: true, user };
+  const { company, ...demoUser } = user;
+  return { authenticated: true, user: { ...demoUser, companyName: company?.name ?? "Global workspace" } };
 }
 
 export async function setDemoSession(userId: string) {

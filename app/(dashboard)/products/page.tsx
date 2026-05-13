@@ -32,6 +32,10 @@ export default function ProductsPage() {
 
   return (
     <div className="grid">
+      <div className="section-heading">
+        <span className="badge subtle">Company workspace data</span>
+        <p className="muted">Produkty są widoczne w przestrzeni firmy i później trafiają do screeningu.</p>
+      </div>
       <ProductForm onChanged={load} />
       <div className="card">
         <h2>Produkty firmy</h2>

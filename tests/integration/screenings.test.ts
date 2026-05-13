@@ -21,7 +21,30 @@ vi.mock("@/lib/screening/screening-service", () => ({
     matchedField: "RULE",
     reason: "Rule matched.",
     comment: "Demo comment.",
-    createdAt: new Date("2026-05-13T00:00:00.000Z").toISOString()
+    createdAt: new Date("2026-05-13T00:00:00.000Z").toISOString(),
+    matchedSubstance: { name: "Bisphenol A", casNumber: "80-05-7", ecNumber: "201-245-8", concentrationPercent: 0.2 },
+    matchedReferenceItem: { name: "Bisphenol A", casNumber: "80-05-7", ecNumber: "201-245-8" },
+    matchedValue: "MIXTURE; 0.2% > 0.1%",
+    ruleApplied: {
+      id: "rule-1",
+      name: "Mieszanina powyżej 0,1%",
+      productTypeEquals: "MIXTURE",
+      concentrationGreaterThan: 0.1,
+      outcomeStatus: "verification required"
+    },
+    explanationRows: [
+      {
+        substanceName: "Bisphenol A",
+        casNumber: "80-05-7",
+        ecNumber: "201-245-8",
+        concentrationPercent: 0.2,
+        matchedField: "CAS",
+        matchedValue: "80-05-7",
+        referenceItemName: "Bisphenol A",
+        rule: "Mieszanina powyżej 0,1%: MIXTURE > 0.1%",
+        impact: "Rule condition met"
+      }
+    ]
   })),
   getScreeningResult: vi.fn(async () => ({
     id: "r1",
@@ -31,7 +54,12 @@ vi.mock("@/lib/screening/screening-service", () => ({
     matchedField: "CAS",
     reason: "CAS matched.",
     comment: "Demo comment.",
-    createdAt: new Date("2026-05-13T00:00:00.000Z").toISOString()
+    createdAt: new Date("2026-05-13T00:00:00.000Z").toISOString(),
+    matchedSubstance: { name: "Formaldehyde", casNumber: "50-00-0", ecNumber: "200-001-8", concentrationPercent: 0.05 },
+    matchedReferenceItem: { name: "Formaldehyde", casNumber: "50-00-0", ecNumber: "200-001-8" },
+    matchedValue: "50-00-0",
+    ruleApplied: null,
+    explanationRows: []
   }))
 }));
 
@@ -47,7 +75,11 @@ describe("screenings API", () => {
       })
     );
     expect(response.status).toBe(201);
-    await expect(response.json()).resolves.toMatchObject({ status: "verification required" });
+    await expect(response.json()).resolves.toMatchObject({
+      status: "verification required",
+      ruleApplied: { name: "Mieszanina powyżej 0,1%" },
+      explanationRows: [{ substanceName: "Bisphenol A", impact: "Rule condition met" }]
+    });
   });
 
   it("gets a screening result", async () => {

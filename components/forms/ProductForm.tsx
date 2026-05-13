@@ -1,5 +1,6 @@
 "use client";
 
+import { Database, Upload } from "lucide-react";
 import { useState } from "react";
 
 const sampleImport = [
@@ -70,6 +71,7 @@ export function ProductForm({ onChanged }: { onChanged: () => void }) {
 
   return (
     <div className="card">
+      <span className="badge subtle">Manual data entry</span>
       <h2>Dodaj produkt</h2>
       <form action={createProduct}>
         <div className="grid two">
@@ -104,9 +106,11 @@ export function ProductForm({ onChanged }: { onChanged: () => void }) {
         </div>
         <div className="actions">
           <button className="button" type="submit">
+            <Database aria-hidden="true" size={16} />
             Zapisz produkt
           </button>
           <button className="button secondary" type="button" onClick={importDemo}>
+            <Upload aria-hidden="true" size={16} />
             Import demo JSON
           </button>
         </div>

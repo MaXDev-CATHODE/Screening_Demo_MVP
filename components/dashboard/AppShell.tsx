@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { DemoUser } from "@/lib/domain/types";
 import { DemoDisclaimer } from "@/components/dashboard/DemoDisclaimer";
+import { DemoProofBar } from "@/components/dashboard/DemoProofBar";
 import { RoleNavigation } from "@/components/dashboard/RoleNavigation";
 
 type Session =
@@ -44,6 +45,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.replace("/login");
   }
 
+  const workspace = session?.authenticated ? (session.user.companyName ?? "Global workspace") : "Loading workspace";
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -61,8 +64,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="session-box">
             {session?.authenticated ? (
               <>
-                <span>{session.user.displayName}</span>
-                <small>{session.user.role}</small>
+                <div>
+                  <span>{session.user.displayName}</span>
+                  <small>{workspace}</small>
+                </div>
+                <span className="badge subtle">{session.user.role}</span>
                 <button className="button secondary" onClick={logout}>
                   Wyloguj
                 </button>
@@ -73,6 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
         <DemoDisclaimer />
+        <DemoProofBar />
         <section className="content">{children}</section>
       </main>
     </div>

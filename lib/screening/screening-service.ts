@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/prisma";
 import {
   DemoUser,
   MatchedField,
+  ProductType,
   PrismaScreeningStatus,
   toApiScreeningStatus
 } from "@/lib/domain/types";
@@ -20,6 +21,76 @@ export type ApiScreeningResult = {
   reason: string;
   comment: string;
   createdAt: string;
+  productName?: string;
+  referenceListName?: string;
+  matchedSubstance: {
+    name: string;
+    casNumber: string | null;
+    ecNumber: string | null;
+    concentrationPercent: number;
+  } | null;
+  matchedReferenceItem: {
+    name: string | null;
+    casNumber: string | null;
+    ecNumber: string | null;
+  } | null;
+  matchedValue: string | null;
+  ruleApplied: {
+    id: string;
+    name: string;
+    productTypeEquals: string;
+    concentrationGreaterThan: number;
+    outcomeStatus: "match" | "no match" | "verification required";
+  } | null;
+  explanationRows: Array<{
+    substanceName: string;
+    casNumber: string | null;
+    ecNumber: string | null;
+    concentrationPercent: number;
+    matchedField: MatchedField;
+    matchedValue: string | null;
+    referenceItemName: string | null;
+    rule: string;
+    impact: string;
+  }>;
+};
+
+type ScreeningSubstance = {
+  name: string;
+  casNumber: string | null;
+  ecNumber: string | null;
+  concentrationPercent: number;
+};
+
+type ScreeningReferenceItem = {
+  name: string | null;
+  casNumber: string | null;
+  ecNumber: string | null;
+};
+
+type ScreeningRuleShape = {
+  id: string;
+  name: string;
+  active: boolean;
+  conditions: { productTypeEquals: ProductType; concentrationGreaterThan: number };
+  outcomeStatus: PrismaScreeningStatus;
+};
+
+type ScreeningContext = {
+  product: {
+    name: string;
+    productType: ProductType;
+    substances: ScreeningSubstance[];
+  };
+  referenceList: {
+    name: string;
+    items: ScreeningReferenceItem[];
+    rules: ScreeningRuleShape[];
+  };
+  matchedSubstance: ScreeningSubstance | null;
+  matchedReferenceItem: ScreeningReferenceItem | null;
+  matchedValue: string | null;
+  ruleApplied: ScreeningRuleShape | null;
 };
 
 function serializeResult(result: {
@@ -31,11 +102,113 @@ function serializeResult(result: {
   reason: string;
   comment: string;
   createdAt: Date;
-}): ApiScreeningResult {
+}, context?: ScreeningContext): ApiScreeningResult {
   return {
     ...result,
     status: toApiScreeningStatus(result.status),
-    createdAt: result.createdAt.toISOString()
+    createdAt: result.createdAt.toISOString(),
+    productName: context?.product.name,
+    referenceListName: context?.referenceList.name,
+    matchedSubstance: context?.matchedSubstance ?? null,
+    matchedReferenceItem: context?.matchedReferenceItem ?? null,
+    matchedValue: context?.matchedValue ?? null,
+    ruleApplied: context?.ruleApplied
+      ? {
+          id: context.ruleApplied.id,
+          name: context.ruleApplied.name,
+          productTypeEquals: context.ruleApplied.conditions.productTypeEquals,
+          concentrationGreaterThan: context.ruleApplied.conditions.concentrationGreaterThan,
+          outcomeStatus: toApiScreeningStatus(context.ruleApplied.outcomeStatus)
+        }
+      : null,
+    explanationRows: context ? buildExplanationRows(context) : []
+  };
+}
+
+function formatMatchValue(substance: ScreeningSubstance, matchedField: MatchedField) {
+  if (matchedField === "CAS") return substance.casNumber;
+  if (matchedField === "EC") return substance.ecNumber;
+  if (matchedField === "NAME") return substance.name;
+  return null;
+}
+
+function buildExplanationRows(context: ScreeningContext): ApiScreeningResult["explanationRows"] {
+  return context.product.substances.map((substance) => {
+    const match = matchSubstance(substance, context.referenceList.items);
+    const ruleMatches =
+      context.ruleApplied &&
+      context.product.productType === context.ruleApplied.conditions.productTypeEquals &&
+      substance.concentrationPercent > context.ruleApplied.conditions.concentrationGreaterThan;
+    return {
+      substanceName: substance.name,
+      casNumber: substance.casNumber,
+      ecNumber: substance.ecNumber,
+      concentrationPercent: substance.concentrationPercent,
+      matchedField: match.item ? match.matchedField : "NONE",
+      matchedValue: match.item ? formatMatchValue(substance, match.matchedField) : null,
+      referenceItemName: match.item?.name ?? null,
+      rule: context.ruleApplied
+        ? `${context.ruleApplied.name}: ${context.product.productType} > ${context.ruleApplied.conditions.concentrationGreaterThan}%`
+        : "No active rule changed the result",
+      impact: ruleMatches
+        ? "Rule condition met"
+        : match.item
+          ? `Reference list match by ${match.matchedField}`
+          : "No reference list match"
+    };
+  });
+}
+
+function decideScreening(product: ScreeningContext["product"], referenceList: ScreeningContext["referenceList"]) {
+  let status: PrismaScreeningStatus = "NO_MATCH";
+  let matchedField: MatchedField = "NONE";
+  let reason = "No matching CAS, EC or sufficiently similar name was found on the selected reference list.";
+  let matchedSubstance: ScreeningSubstance | null = null;
+  let matchedReferenceItem: ScreeningReferenceItem | null = null;
+  let matchedValue: string | null = null;
+  let ruleApplied: ScreeningRuleShape | null = null;
+
+  for (const substance of product.substances) {
+    const match = matchSubstance(substance, referenceList.items);
+    if (match.item) {
+      status = "MATCH";
+      matchedField = match.matchedField;
+      matchedSubstance = substance;
+      matchedReferenceItem = match.item;
+      matchedValue = formatMatchValue(substance, match.matchedField);
+      reason = `Matched ${substance.name} against ${match.item.name ?? "reference item"} by ${match.matchedField}.`;
+      break;
+    }
+  }
+
+  for (const rule of referenceList.rules.filter((entry) => entry.active)) {
+    const conditions = rule.conditions;
+    if (evaluateRule(product, conditions)) {
+      const thresholdSubstance =
+        product.substances.find((substance) => substance.concentrationPercent > conditions.concentrationGreaterThan) ??
+        matchedSubstance;
+      status = rule.outcomeStatus;
+      matchedField = "RULE";
+      matchedSubstance = thresholdSubstance;
+      matchedValue = `${product.productType}; ${thresholdSubstance?.concentrationPercent ?? "-"}% > ${conditions.concentrationGreaterThan}%`;
+      ruleApplied = rule;
+      reason = `Rule "${rule.name}" matched: product type ${conditions.productTypeEquals} and concentration greater than ${conditions.concentrationGreaterThan}%.`;
+      break;
+    }
+  }
+
+  return {
+    status,
+    matchedField,
+    reason,
+    context: {
+      product,
+      referenceList,
+      matchedSubstance,
+      matchedReferenceItem,
+      matchedValue,
+      ruleApplied
+    }
   };
 }
 
@@ -64,43 +237,38 @@ export async function runScreening(user: DemoUser, productId: string, referenceL
     throw new Error("REFERENCE_LIST_NOT_FOUND");
   }
 
-  let status: PrismaScreeningStatus = "NO_MATCH";
-  let matchedField: MatchedField = "NONE";
-  let reason = "No matching CAS, EC or sufficiently similar name was found on the selected reference list.";
-
-  for (const substance of product.substances) {
-    const match = matchSubstance(substance, referenceList.items);
-    if (match.item) {
-      status = "MATCH";
-      matchedField = match.matchedField;
-      reason = `Matched ${substance.name} against ${match.item.name ?? "reference item"} by ${match.matchedField}.`;
-      break;
+  const decision = decideScreening(
+    {
+      name: product.name,
+      productType: product.productType,
+      substances: product.substances
+    },
+    {
+      name: referenceList.name,
+      items: referenceList.items,
+      rules: referenceList.rules.map((rule) => ({
+        id: rule.id,
+        name: rule.name,
+        active: rule.active,
+        conditions: rule.conditions as { productTypeEquals: ProductType; concentrationGreaterThan: number },
+        outcomeStatus: rule.outcomeStatus as PrismaScreeningStatus
+      }))
     }
-  }
+  );
 
-  for (const rule of referenceList.rules) {
-    const conditions = rule.conditions as { productTypeEquals: typeof product.productType; concentrationGreaterThan: number };
-    if (evaluateRule(product, conditions)) {
-      status = rule.outcomeStatus as PrismaScreeningStatus;
-      matchedField = "RULE";
-      reason = `Rule "${rule.name}" matched: product type ${conditions.productTypeEquals} and concentration greater than ${conditions.concentrationGreaterThan}%.`;
-      break;
-    }
-  }
-
-  const comment = selectBusinessComment(referenceList.businessComments, status);
+  const comment = selectBusinessComment(referenceList.businessComments, decision.status);
   const result = await prisma.screeningResult.create({
     data: {
       productId,
       referenceListId,
-      status,
-      matchedField,
-      reason,
+      status: decision.status,
+      matchedField: decision.matchedField,
+      reason: decision.reason,
       comment
     }
   });
 
-  return serializeResult(result);
+  return serializeResult(result, decision.context);
 }
 
 export async function getScreeningResult(user: DemoUser, id: string) {
@@ -132,39 +300,29 @@ async function runMemoryScreening(user: DemoUser, productId: string, referenceLi
   const referenceList = memoryReferenceLists.find((entry) => entry.id === referenceListId && entry.active);
   if (!referenceList) throw new Error("REFERENCE_LIST_NOT_FOUND");
 
-  let status: PrismaScreeningStatus = "NO_MATCH";
-  let matchedField: MatchedField = "NONE";
-  let reason = "No matching CAS, EC or sufficiently similar name was found on the selected reference list.";
-
-  for (const substance of product.substances) {
-    const match = matchSubstance(substance, referenceList.items);
-    if (match.item) {
-      status = "MATCH";
-      matchedField = match.matchedField;
-      reason = `Matched ${substance.name} against ${match.item.name ?? "reference item"} by ${match.matchedField}.`;
-      break;
+  const decision = decideScreening(
+    {
+      name: product.name,
+      productType: product.productType,
+      substances: product.substances
+    },
+    {
+      name: referenceList.name,
+      items: referenceList.items,
+      rules: referenceList.rules
     }
-  }
-
-  for (const rule of referenceList.rules.filter((entry) => entry.active)) {
-    if (evaluateRule(product, rule.conditions)) {
-      status = rule.outcomeStatus;
-      matchedField = "RULE";
-      reason = `Rule "${rule.name}" matched: product type ${rule.conditions.productTypeEquals} and concentration greater than ${rule.conditions.concentrationGreaterThan}%.`;
-      break;
-    }
-  }
+  );
 
   const result = {
     id: `mem-result-${Date.now()}`,
     productId,
     referenceListId,
-    status,
-    matchedField,
-    reason,
-    comment: selectBusinessComment(referenceList.businessComments, status),
+    status: decision.status,
+    matchedField: decision.matchedField,
+    reason: decision.reason,
+    comment: selectBusinessComment(referenceList.businessComments, decision.status),
     createdAt: new Date()
   };
   memoryResults.unshift(result);
-  return serializeResult(result);
+  return serializeResult(result, decision.context);
 }

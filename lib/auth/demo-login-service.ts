@@ -19,7 +19,8 @@ export async function loginAsRole(role: UserRole): Promise<DemoUser> {
       displayName: true,
       email: true,
       role: true,
-      companyId: true
+      companyId: true,
+      company: { select: { name: true } }
     }
   });
 
@@ -28,5 +29,6 @@ export async function loginAsRole(role: UserRole): Promise<DemoUser> {
   }
 
   await setDemoSession(user.id);
-  return user;
+  const { company, ...demoUser } = user;
+  return { ...demoUser, companyName: company?.name ?? "Global workspace" };
 }

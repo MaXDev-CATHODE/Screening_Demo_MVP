@@ -11,6 +11,7 @@ export type MemoryUser = {
   email: string;
   role: UserRole;
   companyId: string | null;
+  companyName?: string | null;
 };
 
 export type MemorySubstance = {
@@ -67,9 +68,30 @@ let sequence = 100;
 const id = (prefix: string) => `${prefix}-${sequence++}`;
 
 export const memoryUsers: MemoryUser[] = [
-  { id: "mem-super", displayName: "Marta Nowak", email: "superadmin@demo.local", role: "SUPER_ADMIN", companyId: null },
-  { id: "mem-admin", displayName: "Jan Kowalski", email: "admin@acme.demo.local", role: "COMPANY_ADMIN", companyId: "mem-acme" },
-  { id: "mem-user", displayName: "Anna Zielińska", email: "user@acme.demo.local", role: "STANDARD_USER", companyId: "mem-acme" }
+  {
+    id: "mem-super",
+    displayName: "Marta Nowak",
+    email: "superadmin@demo.local",
+    role: "SUPER_ADMIN",
+    companyId: null,
+    companyName: "Global workspace"
+  },
+  {
+    id: "mem-admin",
+    displayName: "Jan Kowalski",
+    email: "admin@acme.demo.local",
+    role: "COMPANY_ADMIN",
+    companyId: "mem-acme",
+    companyName: "Acme Chemicals"
+  },
+  {
+    id: "mem-user",
+    displayName: "Anna Zielińska",
+    email: "user@acme.demo.local",
+    role: "STANDARD_USER",
+    companyId: "mem-acme",
+    companyName: "Acme Chemicals"
+  }
 ];
 
 export const memoryProducts: MemoryProduct[] = [
