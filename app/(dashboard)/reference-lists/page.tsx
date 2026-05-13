@@ -32,7 +32,7 @@ export default function ReferenceListsPage() {
       return;
     }
     setLists(data.items);
-    setSelectedId((current) => current || data.items[0]?.id || "");
+    setSelectedId((current) => current || data.items.find((list: ReferenceList) => list.name === "SVHC demo list")?.id || data.items[0]?.id || "");
   }
 
   async function createList() {
