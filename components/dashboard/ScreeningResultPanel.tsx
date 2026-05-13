@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Clipboard, Copy, HelpCircle, SearchCheck, ShieldAlert } from "lucide-react";
+import { CheckCircle2, Clipboard, Copy, FileClock, HelpCircle, SearchCheck, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import type { ApiScreeningResult } from "@/lib/screening/screening-service";
 
@@ -79,6 +79,7 @@ export function ScreeningResultPanel({ result }: { result: ApiScreeningResult | 
           <p className="muted">
             {result.productName ?? "Produkt demo"} vs {result.referenceListName ?? "lista referencyjna"}
           </p>
+          {result.matchScore !== null ? <span className="score-pill">Match score: {result.matchScore}%</span> : null}
         </div>
       </div>
 
@@ -102,6 +103,7 @@ export function ScreeningResultPanel({ result }: { result: ApiScreeningResult | 
               <th>EC</th>
               <th>Stężenie</th>
               <th>Dopasowanie</th>
+              <th>Score</th>
               <th>Reguła / wpływ</th>
             </tr>
           </thead>
@@ -117,6 +119,7 @@ export function ScreeningResultPanel({ result }: { result: ApiScreeningResult | 
                   <br />
                   <span className="muted">{row.referenceItemName ?? row.matchedValue ?? "No list item"}</span>
                 </td>
+                <td>{row.matchScore !== null ? `${row.matchScore}%` : "-"}</td>
                 <td>
                   {row.rule}
                   <br />
@@ -137,6 +140,35 @@ export function ScreeningResultPanel({ result }: { result: ApiScreeningResult | 
           {copied ? <CheckCircle2 aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
           {copied ? "Skopiowano" : "Kopiuj"}
         </button>
+      </div>
+
+      <div className="snapshot-box">
+        <div>
+          <p className="eyebrow">Snapshot decyzji</p>
+          <strong>{result.screeningSnapshotLabel}</strong>
+        </div>
+        <dl>
+          <div>
+            <dt>Screening ID</dt>
+            <dd>{result.id}</dd>
+          </div>
+          <div>
+            <dt>Data</dt>
+            <dd>{new Date(result.createdAt).toLocaleString("pl-PL")}</dd>
+          </div>
+          <div>
+            <dt>Wersja listy</dt>
+            <dd>{result.referenceListVersion}</dd>
+          </div>
+          <div>
+            <dt>Reguła</dt>
+            <dd>{result.ruleApplied?.name ?? "Brak aktywnej reguły zmieniającej wynik"}</dd>
+          </div>
+        </dl>
+        <p>
+          <FileClock aria-hidden="true" size={15} />
+          Wynik jest zamrożony względem tej wersji listy demo.
+        </p>
       </div>
 
       <p className="result-footnote">

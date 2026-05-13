@@ -19,9 +19,12 @@ vi.mock("@/lib/screening/screening-service", () => ({
     referenceListId: "l1",
     status: "verification required",
     matchedField: "RULE",
+    matchScore: 100,
     reason: "Rule matched.",
     comment: "Demo comment.",
     createdAt: new Date("2026-05-13T00:00:00.000Z").toISOString(),
+    referenceListVersion: "v2026.05",
+    screeningSnapshotLabel: "SVHC demo list v2026.05 @ 2026-05-13",
     matchedSubstance: { name: "Bisphenol A", casNumber: "80-05-7", ecNumber: "201-245-8", concentrationPercent: 0.2 },
     matchedReferenceItem: { name: "Bisphenol A", casNumber: "80-05-7", ecNumber: "201-245-8" },
     matchedValue: "MIXTURE; 0.2% > 0.1%",
@@ -39,6 +42,7 @@ vi.mock("@/lib/screening/screening-service", () => ({
         ecNumber: "201-245-8",
         concentrationPercent: 0.2,
         matchedField: "CAS",
+        matchScore: 100,
         matchedValue: "80-05-7",
         referenceItemName: "Bisphenol A",
         rule: "Mieszanina powyżej 0,1%: MIXTURE > 0.1%",
@@ -52,9 +56,12 @@ vi.mock("@/lib/screening/screening-service", () => ({
     referenceListId: "l1",
     status: "match",
     matchedField: "CAS",
+    matchScore: 100,
     reason: "CAS matched.",
     comment: "Demo comment.",
     createdAt: new Date("2026-05-13T00:00:00.000Z").toISOString(),
+    referenceListVersion: "v2026.05",
+    screeningSnapshotLabel: "SVHC demo list v2026.05 @ 2026-05-13",
     matchedSubstance: { name: "Formaldehyde", casNumber: "50-00-0", ecNumber: "200-001-8", concentrationPercent: 0.05 },
     matchedReferenceItem: { name: "Formaldehyde", casNumber: "50-00-0", ecNumber: "200-001-8" },
     matchedValue: "50-00-0",
@@ -78,6 +85,8 @@ describe("screenings API", () => {
     await expect(response.json()).resolves.toMatchObject({
       status: "verification required",
       ruleApplied: { name: "Mieszanina powyżej 0,1%" },
+      matchScore: 100,
+      referenceListVersion: "v2026.05",
       explanationRows: [{ substanceName: "Bisphenol A", impact: "Rule condition met" }]
     });
   });

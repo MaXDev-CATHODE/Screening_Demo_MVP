@@ -148,6 +148,24 @@ export const memoryProducts: MemoryProduct[] = [
         concentrationPercent: 4.5
       }
     ]
+  },
+  {
+    id: "mem-product-fuzzy",
+    companyId: "mem-acme",
+    name: "Fuzzy Name Demo",
+    productType: "ARTICLE",
+    dataQualityStatus: "LIMITED",
+    createdAt: new Date("2026-05-13T00:00:00.000Z"),
+    substances: [
+      {
+        id: "mem-sub-bisfenol",
+        productId: "mem-product-fuzzy",
+        name: "Bisfenol A",
+        casNumber: null,
+        ecNumber: null,
+        concentrationPercent: 0.05
+      }
+    ]
   }
 ];
 

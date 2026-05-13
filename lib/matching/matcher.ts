@@ -24,6 +24,10 @@ export function normalizeName(value?: string | null) {
     .toLowerCase();
 }
 
+function normalizeNameForSimilarity(value?: string | null) {
+  return normalizeName(value).replace(/ph/g, "f");
+}
+
 export function levenshteinDistance(a: string, b: string) {
   const left = normalizeName(a);
   const right = normalizeName(b);
@@ -51,7 +55,14 @@ export function nameSimilarity(a: string, b: string) {
   if (!left && !right) return 1;
   if (!left || !right) return 0;
   const distance = levenshteinDistance(left, right);
-  return 1 - distance / Math.max(left.length, right.length);
+  const directScore = 1 - distance / Math.max(left.length, right.length);
+
+  const phoneticLeft = normalizeNameForSimilarity(a);
+  const phoneticRight = normalizeNameForSimilarity(b);
+  if (!phoneticLeft || !phoneticRight) return directScore;
+  const phoneticDistance = levenshteinDistance(phoneticLeft, phoneticRight);
+  const phoneticScore = 1 - phoneticDistance / Math.max(phoneticLeft.length, phoneticRight.length);
+  return Math.max(directScore, phoneticScore);
 }
 
 export function matchSubstance<TItem extends MatchableSubstance>(

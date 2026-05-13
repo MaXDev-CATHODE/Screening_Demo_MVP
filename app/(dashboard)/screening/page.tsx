@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, CircleHelp, Play, ShieldAlert } from "lucide-react";
+import { BadgeCheck, CircleHelp, Play, SearchCheck, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ScreeningResultPanel } from "@/components/dashboard/ScreeningResultPanel";
 import type { ApiScreeningResult } from "@/lib/screening/screening-service";
@@ -40,6 +40,13 @@ const scenarios = [
     listName: "SVHC demo list",
     description: "Brak trafienia dla danych demonstracyjnych.",
     icon: BadgeCheck
+  },
+  {
+    label: "Pokaż FUZZY MATCH",
+    productName: "Fuzzy Name Demo",
+    listName: "SVHC demo list",
+    description: "Literówka i brak CAS/EC, ale nazwa nadal wskazuje trafienie.",
+    icon: SearchCheck
   }
 ];
 

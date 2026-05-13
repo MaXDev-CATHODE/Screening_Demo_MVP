@@ -19,10 +19,11 @@ describe("matching helpers", () => {
     expect(result.item?.name).toBe("Formaldehyde");
   });
 
-  it("falls back to fuzzy normalized name", () => {
-    const result = matchSubstance({ name: "Bisfenol A" }, items, 0.7);
+  it("falls back to fuzzy normalized name and exposes a useful score", () => {
+    const result = matchSubstance({ name: "Bisfenol A" }, items);
     expect(result.matchedField).toBe("NAME");
     expect(result.item?.name).toBe("Bisphenol A");
+    expect(result.score).toBeGreaterThanOrEqual(0.9);
   });
 
   it("normalizes whitespace and punctuation", () => {

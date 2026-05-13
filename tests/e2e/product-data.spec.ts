@@ -7,6 +7,8 @@ test("company admin can add and import product data", async ({ page }) => {
   await page.getByRole("link", { name: "Dane produktowe" }).click();
   await page.getByRole("button", { name: "Zapisz produkt" }).click();
   await expect(page.getByText("Produkt dodany.")).toBeVisible();
-  await page.getByRole("button", { name: "Import demo JSON" }).click();
-  await expect(page.getByText(/Import:/)).toBeVisible();
+  await expect(page.getByText("CSV import preview")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "Limited Data Demo" })).toBeVisible();
+  await page.getByRole("button", { name: "Import CSV demo" }).click();
+  await expect(page.getByText(/Import CSV:/)).toBeVisible();
 });

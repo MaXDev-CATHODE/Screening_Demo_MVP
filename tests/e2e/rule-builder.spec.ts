@@ -10,4 +10,11 @@ test("super admin can preview and create a rule", async ({ page }) => {
   await expect(page.locator(".rule-preview")).toContainText("Mieszanina");
   await page.getByRole("button", { name: /Zapisz regu/ }).click();
   await expect(page.getByText("Reguła zapisana.")).toBeVisible();
+  await expect(page.getByText("Gotowe komentarze")).toBeVisible();
+  await page
+    .locator(".comments-editor textarea")
+    .first()
+    .fill("Demo: komentarz MATCH zaktualizowany podczas prezentacji.");
+  await page.getByRole("button", { name: "Zapisz komentarze" }).click();
+  await expect(page.getByText("Komentarze zapisane.")).toBeVisible();
 });

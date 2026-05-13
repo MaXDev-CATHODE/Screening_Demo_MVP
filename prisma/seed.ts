@@ -162,6 +162,18 @@ async function main() {
 
   await prisma.product.create({
     data: {
+      companyId: acme.id,
+      name: "Fuzzy Name Demo",
+      productType: "ARTICLE",
+      dataQualityStatus: "LIMITED",
+      substances: {
+        create: [{ name: "Bisfenol A", concentrationPercent: 0.05 }]
+      }
+    }
+  });
+
+  await prisma.product.create({
+    data: {
       companyId: baltic.id,
       name: "Baltic Private Sample",
       productType: "MIXTURE",

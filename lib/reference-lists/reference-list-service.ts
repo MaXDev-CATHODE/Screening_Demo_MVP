@@ -14,7 +14,7 @@ export async function listReferenceLists() {
   }
 
   return prisma.referenceList.findMany({
-    include: { items: true, rules: true },
+    include: { items: true, rules: true, businessComments: true },
     orderBy: { createdAt: "desc" }
   });
 }
@@ -63,6 +63,6 @@ export async function createReferenceList(input: ReferenceListInput) {
           }))
       }
     },
-    include: { items: true, rules: true }
+    include: { items: true, rules: true, businessComments: true }
   });
 }

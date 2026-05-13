@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RuleSummary } from "@/components/dashboard/RuleSummary";
+import { BusinessCommentsEditor } from "@/components/forms/BusinessCommentsEditor";
 import { RuleBuilder } from "@/components/forms/RuleBuilder";
 
 type ReferenceList = {
@@ -16,6 +17,11 @@ type ReferenceList = {
     active: boolean;
     conditions: { productTypeEquals: string; concentrationGreaterThan: number };
     outcomeStatus: string;
+  }>;
+  businessComments: Array<{
+    id: string;
+    status: "MATCH" | "NO_MATCH" | "VERIFICATION_REQUIRED";
+    text: string;
   }>;
 };
 
@@ -110,6 +116,9 @@ export default function ReferenceListsPage() {
       </div>
       <div className="grid">
         {selected ? <RuleBuilder referenceListId={selected.id} onChanged={load} /> : null}
+        {selected ? (
+          <BusinessCommentsEditor referenceListId={selected.id} comments={selected.businessComments ?? []} onChanged={load} />
+        ) : null}
         {selected?.rules.map((rule) => <RuleSummary key={rule.id} rule={rule} />)}
       </div>
     </div>

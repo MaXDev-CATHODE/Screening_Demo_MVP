@@ -18,11 +18,14 @@ export type ApiScreeningResult = {
   referenceListId: string;
   status: "match" | "no match" | "verification required";
   matchedField: MatchedField;
+  matchScore: number | null;
   reason: string;
   comment: string;
   createdAt: string;
   productName?: string;
   referenceListName?: string;
+  referenceListVersion: string;
+  screeningSnapshotLabel: string;
   matchedSubstance: {
     name: string;
     casNumber: string | null;
@@ -48,6 +51,7 @@ export type ApiScreeningResult = {
     ecNumber: string | null;
     concentrationPercent: number;
     matchedField: MatchedField;
+    matchScore: number | null;
     matchedValue: string | null;
     referenceItemName: string | null;
     rule: string;
@@ -90,6 +94,7 @@ type ScreeningContext = {
   matchedSubstance: ScreeningSubstance | null;
   matchedReferenceItem: ScreeningReferenceItem | null;
   matchedValue: string | null;
+  matchScore: number | null;
   ruleApplied: ScreeningRuleShape | null;
 };
 
@@ -103,15 +108,19 @@ function serializeResult(result: {
   comment: string;
   createdAt: Date;
 }, context?: ScreeningContext): ApiScreeningResult {
+  const referenceListVersion = getReferenceListVersion(context?.referenceList.name);
   return {
     ...result,
     status: toApiScreeningStatus(result.status),
     createdAt: result.createdAt.toISOString(),
     productName: context?.product.name,
     referenceListName: context?.referenceList.name,
+    referenceListVersion,
+    screeningSnapshotLabel: `${context?.referenceList.name ?? "Reference list"} ${referenceListVersion} @ ${result.createdAt.toISOString().slice(0, 10)}`,
     matchedSubstance: context?.matchedSubstance ?? null,
     matchedReferenceItem: context?.matchedReferenceItem ?? null,
     matchedValue: context?.matchedValue ?? null,
+    matchScore: context?.matchScore ?? null,
     ruleApplied: context?.ruleApplied
       ? {
           id: context.ruleApplied.id,
@@ -123,6 +132,16 @@ function serializeResult(result: {
       : null,
     explanationRows: context ? buildExplanationRows(context) : []
   };
+}
+
+function getReferenceListVersion(name?: string) {
+  if (name?.toLowerCase().includes("svhc")) return "v2026.05";
+  if (name?.toLowerCase().includes("internal")) return "v2026.05-internal";
+  return "v2026.05-demo";
+}
+
+function toPercentScore(score: number) {
+  return Math.round(score * 100);
 }
 
 function formatMatchValue(substance: ScreeningSubstance, matchedField: MatchedField) {
@@ -145,6 +164,7 @@ function buildExplanationRows(context: ScreeningContext): ApiScreeningResult["ex
       ecNumber: substance.ecNumber,
       concentrationPercent: substance.concentrationPercent,
       matchedField: match.item ? match.matchedField : "NONE",
+      matchScore: match.item ? toPercentScore(match.score) : null,
       matchedValue: match.item ? formatMatchValue(substance, match.matchedField) : null,
       referenceItemName: match.item?.name ?? null,
       rule: context.ruleApplied
@@ -166,6 +186,7 @@ function decideScreening(product: ScreeningContext["product"], referenceList: Sc
   let matchedSubstance: ScreeningSubstance | null = null;
   let matchedReferenceItem: ScreeningReferenceItem | null = null;
   let matchedValue: string | null = null;
+  let matchScore: number | null = null;
   let ruleApplied: ScreeningRuleShape | null = null;
 
   for (const substance of product.substances) {
@@ -176,7 +197,11 @@ function decideScreening(product: ScreeningContext["product"], referenceList: Sc
       matchedSubstance = substance;
       matchedReferenceItem = match.item;
       matchedValue = formatMatchValue(substance, match.matchedField);
-      reason = `Matched ${substance.name} against ${match.item.name ?? "reference item"} by ${match.matchedField}.`;
+      matchScore = toPercentScore(match.score);
+      reason =
+        match.matchedField === "NAME"
+          ? `Potential fuzzy name match: ${substance.name} against ${match.item.name ?? "reference item"} with ${matchScore}% similarity.`
+          : `Matched ${substance.name} against ${match.item.name ?? "reference item"} by ${match.matchedField}.`;
       break;
     }
   }
@@ -207,6 +232,7 @@ function decideScreening(product: ScreeningContext["product"], referenceList: Sc
       matchedSubstance,
       matchedReferenceItem,
       matchedValue,
+      matchScore,
       ruleApplied
     }
   };

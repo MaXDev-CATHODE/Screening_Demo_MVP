@@ -322,6 +322,55 @@ th {
   gap: 10px;
 }
 
+.csv-import {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.csv-import-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.csv-import-head h3 {
+  margin-top: 8px;
+}
+
+.file-button {
+  position: relative;
+}
+
+.file-button input {
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.mapping-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mapping-chips span {
+  background: #eef4f7;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: #40536b;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 9px;
+}
+
+.csv-preview table {
+  min-width: 720px;
+}
+
 .disclaimer {
   align-items: center;
   background: #fffbeb;
@@ -521,7 +570,7 @@ th {
 .scenario-strip {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .scenario-button {
@@ -613,6 +662,17 @@ th {
   margin: 9px 0 6px;
 }
 
+.score-pill {
+  background: #eef4ff;
+  border: 1px solid #b2ccff;
+  border-radius: 999px;
+  color: var(--info);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 9px;
+}
+
 .status-review {
   border-top: 4px solid #f79009;
 }
@@ -668,6 +728,42 @@ th {
   margin-bottom: 0;
 }
 
+.snapshot-box {
+  background: #f8fbfd;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.snapshot-box dl {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.snapshot-box dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.snapshot-box dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.snapshot-box p:last-child {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
 .result-footnote {
   align-items: center;
   color: var(--muted);
@@ -690,6 +786,21 @@ th {
 
 .rule-builder h2 {
   margin-top: 10px;
+}
+
+.comments-editor h2 {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.comments-editor h2 svg {
+  color: var(--brand);
+}
+
+.compact-textarea {
+  min-height: 84px;
 }
 
 .rule-preview {
@@ -740,9 +851,14 @@ th {
 
   .topbar,
   .session-box,
-  .comment-box {
+  .comment-box,
+  .csv-import-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .snapshot-box dl {
+    grid-template-columns: 1fr;
   }
 
   .main {
