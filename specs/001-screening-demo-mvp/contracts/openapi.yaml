@@ -40,6 +40,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
+  /demo-metrics:
+    get:
+      summary: Get dashboard metrics for the current demo session
+      operationId: getDemoMetrics
+      responses:
+        "200":
+          description: Role-scoped SaaS demo metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoMetrics"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /logout:
     post:
       summary: End current demo session
@@ -280,6 +293,59 @@ components:
     MatchedField:
       type: string
       enum: [CAS, EC, NAME, RULE, NONE]
+    DemoMetrics:
+      type: object
+      required:
+        [
+          role,
+          workspaceLabel,
+          scopeLabel,
+          companies,
+          products,
+          referenceLists,
+          rules,
+          screenings,
+          resultTypes,
+          resultsByStatus,
+          dataQuality
+        ]
+      properties:
+        role:
+          $ref: "#/components/schemas/UserRole"
+        workspaceLabel:
+          type: string
+        scopeLabel:
+          type: string
+        companies:
+          type: integer
+        products:
+          type: integer
+        referenceLists:
+          type: integer
+        rules:
+          type: integer
+        screenings:
+          type: integer
+        resultTypes:
+          type: integer
+        resultsByStatus:
+          type: object
+          properties:
+            match:
+              type: integer
+            no match:
+              type: integer
+            verification required:
+              type: integer
+        dataQuality:
+          type: object
+          properties:
+            READY:
+              type: integer
+            LIMITED:
+              type: integer
+            INVALID:
+              type: integer
     Session:
       type: object
       required: [authenticated]
@@ -400,6 +466,20 @@ components:
           properties:
             id:
               type: string
+    ScreeningRuleApplied:
+      type: object
+      required: [id, name, productTypeEquals, concentrationGreaterThan, outcomeStatus]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        productTypeEquals:
+          $ref: "#/components/schemas/ProductType"
+        concentrationGreaterThan:
+          type: number
+        outcomeStatus:
+          $ref: "#/components/schemas/ScreeningStatus"
     RuleConditions:
       type: object
       required: [productTypeEquals, concentrationGreaterThan]
@@ -430,6 +510,61 @@ components:
         createdAt:
           type: string
           format: date-time
+        productName:
+          type: string
+        referenceListName:
+          type: string
+        referenceListVersion:
+          type: string
+        screeningSnapshotLabel:
+          type: string
+        matchScore:
+          type: integer
+          nullable: true
+        matchedValue:
+          type: string
+          nullable: true
+        matchedSubstance:
+          nullable: true
+          $ref: "#/components/schemas/SubstanceInput"
+        matchedReferenceItem:
+          nullable: true
+          $ref: "#/components/schemas/ReferenceListItemInput"
+        ruleApplied:
+          nullable: true
+          $ref: "#/components/schemas/ScreeningRuleApplied"
+        explanationRows:
+          type: array
+          items:
+            type: object
+            required:
+              [substanceName, casNumber, ecNumber, concentrationPercent, matchedField, matchScore, matchedValue, referenceItemName, rule, impact]
+            properties:
+              substanceName:
+                type: string
+              casNumber:
+                type: string
+                nullable: true
+              ecNumber:
+                type: string
+                nullable: true
+              concentrationPercent:
+                type: number
+              matchedField:
+                $ref: "#/components/schemas/MatchedField"
+              matchScore:
+                type: integer
+                nullable: true
+              matchedValue:
+                type: string
+                nullable: true
+              referenceItemName:
+                type: string
+                nullable: true
+              rule:
+                type: string
+              impact:
+                type: string
     Error:
       type: object
       required: [message]

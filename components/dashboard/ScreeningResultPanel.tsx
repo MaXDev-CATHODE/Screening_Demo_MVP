@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Clipboard, Copy, FileClock, HelpCircle, SearchCheck, ShieldAlert } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ApiScreeningResult } from "@/lib/screening/screening-service";
 
 const statusConfig = {
@@ -30,6 +30,11 @@ const statusConfig = {
 
 export function ScreeningResultPanel({ result }: { result: ApiScreeningResult | null }) {
   const [copied, setCopied] = useState(false);
+  const [businessAction, setBusinessAction] = useState("");
+
+  useEffect(() => {
+    setBusinessAction("");
+  }, [result?.id]);
 
   if (!result) {
     return (
@@ -141,6 +146,31 @@ export function ScreeningResultPanel({ result }: { result: ApiScreeningResult | 
           {copied ? "Skopiowano" : "Kopiuj"}
         </button>
       </div>
+
+      {result.status === "verification required" ? (
+        <div className="result-section business-actions">
+          <div>
+            <p className="eyebrow">Kolejny krok biznesowy</p>
+            <h3>Verification workflow</h3>
+            <p className="muted">Akcje demo pokazują, że wynik może wejść w proces przeglądu merytorycznego.</p>
+          </div>
+          <div className="actions">
+            <button className="button secondary" type="button" onClick={() => setBusinessAction("Oznaczono do przeglądu")}>
+              <HelpCircle aria-hidden="true" size={16} />
+              Oznacz do przeglądu
+            </button>
+            <button className="button secondary" type="button" onClick={() => setBusinessAction("Komentarz zaakceptowany")}>
+              <CheckCircle2 aria-hidden="true" size={16} />
+              Akceptuj komentarz
+            </button>
+            <button className="button secondary" type="button" onClick={() => setBusinessAction("Wynik gotowy do eksportu")}>
+              <Clipboard aria-hidden="true" size={16} />
+              Eksportuj wynik
+            </button>
+          </div>
+          {businessAction ? <p className="badge info">{businessAction}</p> : null}
+        </div>
+      ) : null}
 
       <div className="snapshot-box">
         <div>

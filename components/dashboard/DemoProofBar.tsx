@@ -2,27 +2,18 @@
 
 import { Building2, Database, GitBranch, ListChecks, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-
-type Product = { id: string };
-type ReferenceList = { id: string; rules?: Array<{ id: string }> };
+import type { DemoMetrics } from "@/lib/demo-metrics/demo-metrics-service";
 
 export function DemoProofBar() {
-  const [stats, setStats] = useState({ products: 0, lists: 0, rules: 0 });
+  const [metrics, setMetrics] = useState<DemoMetrics | null>(null);
 
   useEffect(() => {
     let active = true;
-    Promise.all([fetch("/api/products"), fetch("/api/reference-lists")])
-      .then(async ([productsResponse, listsResponse]) => {
-        const productsData = productsResponse.ok ? await productsResponse.json() : { items: [] };
-        const listsData = listsResponse.ok ? await listsResponse.json() : { items: [] };
+    fetch("/api/demo-metrics")
+      .then(async (response) => {
+        const data = response.ok ? await response.json() : null;
         if (!active) return;
-        const products = (productsData.items ?? []) as Product[];
-        const lists = (listsData.items ?? []) as ReferenceList[];
-        setStats({
-          products: products.length,
-          lists: lists.length,
-          rules: lists.reduce((total, list) => total + (list.rules?.length ?? 0), 0)
-        });
+        setMetrics(data);
       })
       .catch(() => undefined);
     return () => {
@@ -31,11 +22,11 @@ export function DemoProofBar() {
   }, []);
 
   const items = [
-    { label: "Sample companies", value: "2", icon: Building2 },
-    { label: "Visible products", value: String(stats.products || "4"), icon: Database },
-    { label: "Reference lists", value: String(stats.lists || "2"), icon: ListChecks },
-    { label: "Active rules", value: String(stats.rules || "1"), icon: GitBranch },
-    { label: "Result types", value: "3", icon: ShieldCheck }
+    { label: "Sample companies", value: String(metrics?.companies ?? "2"), icon: Building2 },
+    { label: "Visible products", value: String(metrics?.products ?? "4"), icon: Database },
+    { label: "Reference lists", value: String(metrics?.referenceLists ?? "2"), icon: ListChecks },
+    { label: "Active rules", value: String(metrics?.rules ?? "1"), icon: GitBranch },
+    { label: "Result types", value: String(metrics?.resultTypes ?? "3"), icon: ShieldCheck }
   ];
 
   return (

@@ -51,7 +51,7 @@ export default function LoginPage() {
       setError(data.message);
       return;
     }
-    router.push("/screening");
+    router.push("/dashboard");
   }
 
   return (

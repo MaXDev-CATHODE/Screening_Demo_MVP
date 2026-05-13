@@ -1,11 +1,14 @@
 "use client";
 
-import { Database, ListChecks, SearchCheck } from "lucide-react";
+import { Database, LayoutDashboard, ListChecks, SearchCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { DemoUser } from "@/lib/domain/types";
 
-const baseLinks = [{ href: "/screening", label: "Screening", icon: SearchCheck }];
+const baseLinks = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/screening", label: "Screening", icon: SearchCheck }
+];
 
 export function RoleNavigation({ user }: { user: DemoUser | null }) {
   const pathname = usePathname();

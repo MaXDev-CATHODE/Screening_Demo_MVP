@@ -11,6 +11,7 @@ import { matchSubstance } from "@/lib/matching/matcher";
 import { evaluateRule } from "@/lib/rules/evaluate";
 import { selectBusinessComment } from "@/lib/screening/comments";
 import { isMemoryMode, memoryProducts, memoryReferenceLists, memoryResults } from "@/lib/demo-data/memory-store";
+import { getDemoReferenceListVersion } from "@/lib/reference-lists/versioning";
 
 export type ApiScreeningResult = {
   id: string;
@@ -108,7 +109,7 @@ function serializeResult(result: {
   comment: string;
   createdAt: Date;
 }, context?: ScreeningContext): ApiScreeningResult {
-  const referenceListVersion = getReferenceListVersion(context?.referenceList.name);
+  const referenceListVersion = getDemoReferenceListVersion(context?.referenceList.name);
   return {
     ...result,
     status: toApiScreeningStatus(result.status),
@@ -132,12 +133,6 @@ function serializeResult(result: {
       : null,
     explanationRows: context ? buildExplanationRows(context) : []
   };
-}
-
-function getReferenceListVersion(name?: string) {
-  if (name?.toLowerCase().includes("svhc")) return "v2026.05";
-  if (name?.toLowerCase().includes("internal")) return "v2026.05-internal";
-  return "v2026.05-demo";
 }
 
 function toPercentScore(score: number) {

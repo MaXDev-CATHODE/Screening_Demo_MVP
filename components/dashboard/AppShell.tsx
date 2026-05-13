@@ -34,6 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname, router]);
 
   const title = useMemo(() => {
+    if (pathname.includes("dashboard")) return "Dashboard";
     if (pathname.includes("products")) return "Dane produktowe";
     if (pathname.includes("reference-lists")) return "Listy referencyjne";
     if (pathname.includes("unauthorized")) return "Brak dostępu";
@@ -50,7 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link className="brand" href="/screening">
+        <Link className="brand" href="/dashboard">
           Screening Demo
         </Link>
         <RoleNavigation user={session?.authenticated ? session.user : null} />

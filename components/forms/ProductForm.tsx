@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, FileSpreadsheet, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, Database, FileSpreadsheet, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const sampleCsv = `Produkt;Typ;Składnik;CAS;EC;Stężenie
@@ -17,6 +17,22 @@ const productTypeLabels: Record<string, "SUBSTANCE" | "MIXTURE" | "ARTICLE"> = {
   WYROB: "ARTICLE",
   WYRÓB: "ARTICLE"
 };
+
+const importSteps = [
+  { label: "1. CSV input", description: "Wklej dane albo wczytaj plik CSV." },
+  { label: "2. Mapowanie kolumn", description: "Sprawdź, jak kolumny trafią do pól systemowych." },
+  { label: "3. Preview + import", description: "Zweryfikuj wiersze i zapisz produkty firmy." }
+];
+
+const columnMappings = [
+  { source: "Produkt", target: "Product.name", note: "Nazwa produktu w przestrzeni firmy" },
+  { source: "Typ", target: "Product.type", note: "SUBSTANCE / MIXTURE / ARTICLE" },
+  { source: "Składnik", target: "Substance.name", note: "Nazwa substancji lub komponentu" },
+  { source: "CAS", target: "Substance.casNumber", note: "Identyfikator CAS, opcjonalny" },
+  { source: "EC", target: "Substance.ecNumber", note: "Identyfikator EC, opcjonalny" },
+  { source: "Stężenie", target: "Substance.concentrationPercent", note: "Wartość używana przez reguły" },
+  { source: "Opis_Tech", target: "Ignoruj kolumnę", note: "Przykład danych poza zakresem MVP" }
+];
 
 type CsvRow = {
   productName: string;
@@ -181,9 +197,9 @@ export function ProductForm({ onChanged }: { onChanged: () => void }) {
       <div className="csv-import">
         <div className="csv-import-head">
           <div>
-            <span className="badge subtle">CSV import preview</span>
+            <span className="badge subtle">CSV import workflow</span>
             <h3>Import zbioru danych</h3>
-            <p className="muted">Demo pokazuje mapping kolumn przed zapisem produktów do przestrzeni firmy.</p>
+            <p className="muted">Demo pokazuje krokowy import, mapowanie kolumn i podgląd przed zapisem produktów.</p>
           </div>
           <label className="button secondary file-button">
             <FileSpreadsheet aria-hidden="true" size={16} />
@@ -191,12 +207,50 @@ export function ProductForm({ onChanged }: { onChanged: () => void }) {
             <input accept=".csv,text/csv" type="file" onChange={(event) => loadCsvFile(event.target.files?.[0])} />
           </label>
         </div>
-        <div className="mapping-chips" aria-label="CSV column mapping">
-          {["Produkt", "Typ", "Składnik", "CAS", "EC", "Stężenie"].map((column) => (
-            <span key={column}>{column}</span>
+
+        <div className="import-stepper" aria-label="CSV import steps">
+          {importSteps.map((step, index) => (
+            <div className="import-step" key={step.label}>
+              <span>{index + 1}</span>
+              <div>
+                <strong>{step.label.replace(/^\d+\.\s/, "")}</strong>
+                <small>{step.description}</small>
+              </div>
+            </div>
           ))}
         </div>
-        <textarea className="textarea" value={csvText} onChange={(event) => setCsvText(event.target.value)} />
+
+        <div className="csv-workflow-grid">
+          <div className="csv-input-panel">
+            <div className="section-heading">
+              <span className="badge subtle">1. CSV input</span>
+              <p className="muted">{previewRows.length} wiersze w podglądzie.</p>
+            </div>
+            <textarea className="textarea" value={csvText} onChange={(event) => setCsvText(event.target.value)} />
+          </div>
+
+          <div className="mapping-panel">
+            <div className="section-heading">
+              <span className="badge subtle">2. Mapowanie kolumn</span>
+              <p className="muted">Kolumny źródłowe zostają przypięte do pól systemowych.</p>
+            </div>
+            <div className="mapping-list" aria-label="CSV column mapping">
+              {columnMappings.map((mapping) => (
+                <div className="mapping-row" key={mapping.source}>
+                  <strong>{mapping.source}</strong>
+                  <ArrowRight aria-hidden="true" size={15} />
+                  <span>{mapping.target}</span>
+                  <small>{mapping.note}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="section-heading">
+          <span className="badge subtle">3. Preview + import</span>
+          <p className="muted">Wiersz z błędnym stężeniem zostanie policzony jako invalid przez backend.</p>
+        </div>
         <div className="table-wrap csv-preview">
           <table>
             <thead>
@@ -228,6 +282,10 @@ export function ProductForm({ onChanged }: { onChanged: () => void }) {
             <Upload aria-hidden="true" size={16} />
             Import CSV demo
           </button>
+          <span className="badge subtle">
+            <CheckCircle2 aria-hidden="true" size={14} />
+            Endpoint /api/products/import bez zmian
+          </span>
         </div>
       </div>
 
