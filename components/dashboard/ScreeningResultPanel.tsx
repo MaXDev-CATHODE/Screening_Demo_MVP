@@ -46,7 +46,23 @@ export function ScreeningResultPanel({ result }: { result: ApiScreeningResult | 
 
   async function copyComment() {
     if (!result) return;
-    await navigator.clipboard?.writeText(result.comment);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(result.comment);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = result.comment;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+    } catch {
+      // The demo should still acknowledge the business action when browser clipboard permission is blocked.
+    }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
   }
